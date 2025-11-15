@@ -1,0 +1,63 @@
+import Flask, request, jsonify 
+from datetime import datetime app 
+= Flask( name ) 
+# In-memory "database" 
+users = [] user_id_counter = 
+1 LOG_FILE = "log.txt" 
+# ---------- Helper: Write logs 
+def 
+write_log(action, details): 
+with open(LOG_FILE, "a") as f: 
+timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S") 
+f.write(f"[{timestamp}] {action} -> {details}\n") # 
+CREATE  
+@app.route("/users", methods=["POST"]) 
+def create_user(): 
+global user_id_counter data 
+= request.get_json() user = { 
+"id": user_id_counter, 
+"name": data["name"], 
+"email": data["email"] 
+} 
+users.append(user) user_id_counter 
++= 1 
+write_log("CREATE", f"Created user {user}") 
+return jsonify(user), 201 
+#  READ (all) 
+@app.route("/users", methods=["GET"]) 
+def get_users(): 
+write_log("READ_ALL", f"Returned {len(users)} users") 
+return jsonify(users) 
+# ---------- READ (single) ---------- 
+@app.route("/users/<int:user_id>", methods=["GET"]) def 
+get_user(user_id): 
+user = next((u for u in users if u["id"] == user_id), None) if user: 
+write_log("READ_ONE", f"User found: {user}") 
+return jsonify(user) 
+write_log("READ_ONE_FAIL", f"User with id={user_id} not found") return 
+jsonify({"error": "User not found"}), 404 
+# UPDATE 
+@app.route("/users/<int:user_id>", methods=["PUT"]) def 
+update_user(user_id): 
+data = request.get_json() 
+user = next((u for u in users if u["id"] == user_id), None) if user: 
+old_data = user.copy() 
+user["name"] = data["name"] 
+user["email"] = data["email"] 
+write_log("UPDATE", f"Updated user {old_data} -> {user}") return 
+jsonify(user) 
+write_log("UPDATE_FAIL", f"User with id={user_id} not found") return 
+jsonify({"error": "User not found"}), 404 
+# DELETE 
+@app.route("/users/<int:user_id>", methods=["DELETE"]) def 
+delete_user(user_id): 
+global users 
+found = any(u["id"] == user_id for u in users) users 
+= [u for u in users if u["id"] != user_id] if found: 
+write_log("DELETE", f"Deleted user with id={user_id}") return 
+jsonify({"message": "User deleted successfully"}) else: 
+write_log("DELETE_FAIL", f"User with id={user_id} not found") return 
+jsonify({"error": "User not found"}), 404 
+# Run 
+if  name == " main 
+": app.run(debug=True)
